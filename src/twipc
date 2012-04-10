@@ -125,7 +125,7 @@ sub testIP($){
     "ssh " .
     "-o NumberOfPasswordPrompts=0 " .
     "-o ConnectTimeout=$timeout " .
-    "wolk\@$ip " .
+    "root\@$ip " .
     "echo $expected" .
     "";
   print "Testing $ip (will wait ${timeout}s before failing)\n" if $verbose;
