@@ -35,7 +35,6 @@
 use strict;
 use warnings;
 use Getopt::Long;
-use Net::Twitter::Lite;
 
 my $nt;
 
@@ -79,6 +78,7 @@ sub decryptIP($){
 }
 
 sub authorize(){
+  use Net::Twitter::Lite;
   $nt = Net::Twitter::Lite->new(
       traits          => ['API::REST', 'API::Search', 'OAuth'],
       consumer_key    => $consumerKey,
