@@ -9,7 +9,7 @@
 # Encrypts IPs weakly using OpenPGP `gpg'
 # Sends data using the Twitter API through Net::Twitter::Lite
 #
-# Copyright (c) 2010 Elliot Wolk
+# Copyright (c) 2010,2012 Elliot Wolk
 #
 # Essentially a wrapper around Net::Twitter::Lite, which is:
 #   Copyright (c) 2009 Marc Mims
@@ -34,77 +34,7 @@
 #######################################################################
 use strict;
 use warnings;
-use Getopt::Long;
-
-my $nt;
-
-my ($accessToken, $accessTokenSecret, $consumerKey, $consumerSecret);
-my ($userID, $screenName);
-
-sub getIP(){
-  return `wget http://whatismyip.org -q -O -`;
-}
-sub encryptIP($){
-  my $ip = shift;
-  my $block = `echo '$ip' | gpg --no-use-agent -q -a --symmetric --passphrase "gpgkey_$accessTokenSecret"`;
-  $block =~ s/^-----BEGIN PGP MESSAGE-----\n.*\n\n//;
-  $block =~ s/\n-----END PGP MESSAGE-----\n*$//;
-  $block =~ s/!/!!!/g;
-  $block =~ s/\+/!p!/g;
-  $block =~ s/ /!s!/g;
-  $block =~ s/\t/!t!/g;
-  $block =~ s/\n/!n!/g;
-  return $block;
-}
-sub decryptIP($){
-  my $enc = shift;
-  $enc =~ s/[+ \t\n]//g;
-  
-  $enc =~ s/!n!/\n/g;
-  $enc =~ s/!t!/\t/g;
-  $enc =~ s/!s!/ /g;
-  $enc =~ s/!p!/+/g;
-  $enc =~ s/!!!/!/g;
-  
-  my $block = "-----BEGIN PGP MESSAGE-----\n";
-  $block .= "Version: GnuPG v1.4.9 (GNU/Linux)\n";
-  $block .= "\n";
-  $block .= $enc;
-  $block .= "\n-----END PGP MESSAGE-----";
-  my $cmd = "echo '$block' | gpg --no-use-agent --no-mdc-warning ".
-    "-q -d --passphrase \"gpgkey_$accessTokenSecret\"";
-
-  return `$cmd`;
-}
-
-sub authorize(){
-  use Net::Twitter::Lite;
-  $nt = Net::Twitter::Lite->new(
-      traits          => ['API::REST', 'API::Search', 'OAuth'],
-      consumer_key    => $consumerKey,
-      consumer_secret => $consumerSecret,
-  );
-
-  if ($accessToken && $accessTokenSecret) {
-      $nt->access_token($accessToken);
-      $nt->access_token_secret($accessTokenSecret);
-  }
-
-  unless ( $nt->authorized ) {
-    # The client is not yet authorized: Do it now
-    print "Authorize this app at ",
-      $nt->get_authorization_url,
-      " and enter the PIN#\n";
-
-    my $pin = <STDIN>;
-    chomp $pin;
-
-    ($accessToken, $accessTokenSecret, $userID, $screenName) =
-      $nt->request_access_token(verifier => $pin);
-  }
-
-  return $nt->authorized;
-}
+use Getopt::Long qw(GetOptionsFromArray);
 
 my $usage = "Usage:
   $0 [OPTS] [-a|--all] -g|--get
@@ -125,93 +55,206 @@ my $usage = "Usage:
       Use CONFIG instead of ~/.twip
 ";
 
-my ($configFile, $useIP, $all, $get, $put, $decrypt, $help);
-my $result = GetOptions(
-  "config=s"  => \$configFile,
-  "ip=s"      => \$useIP,
-  "all|a"     => \$all,
-  "get|g"     => \$get,
-  "put|p"     => \$put,
-  "decrypt=s" => \$decrypt,
-  "h|help"    => \$help,
-);
-if($help or not $result){
-  print $usage;
-  exit $result;
+
+sub parseOpts(@);
+sub parseConfig($);
+sub writeConfig($$);
+sub getIP();
+sub encryptIP($$);
+sub decryptIP($$);
+sub authorize($$$$);
+
+sub main(@){
+  my %opts = parseOpts @_;
+
+  my %config = parseConfig $opts{configFile};
+
+  my $auth = authorize(
+    $config{consumerKey},
+    $config{consumerSecret},
+    $config{accessToken},
+    $config{accessTokenSecret},
+  );
+
+  my $nt = $$auth[0];
+  $config{accessToken} = $$auth[1];
+  $config{accessTokenSecret} = $$auth[2];
+
+  writeConfig $opts{configFile}, \%config;
+
+  if(defined $opts{get}){
+    my @statuses = @{$nt->friends_timeline};
+    if(@statuses <= 0){
+      print "No statuses found!\n";
+    }elsif(not defined $opts{all}){
+      print decryptIP($statuses[0]->{text}, $config{accessTokenSecret});
+    }else{
+      for my $status(@statuses){
+        my $ip = decryptIP($status->{text}, $config{accessTokenSecret});
+        chomp $ip;
+        my $date = $status->{created_at};
+        print "$ip - $date\n";
+      }
+    }
+  }elsif(defined $opts{put}){
+    my $ip = $opts{useIP};
+    $ip = getIP if not defined $ip;
+    chomp $ip;
+
+    my $msg = encryptIP($ip, $config{accessTokenSecret});
+    $nt->update({ status => $msg });
+  }elsif(defined $opts{decrypt}){
+    print decryptIP $opts{decrypt}, $config{accessTokenSecret};
+  }
 }
 
-$configFile = '~/.twip' if(not defined $configFile);
-$configFile = `echo $configFile`;
-chomp $configFile;
+sub parseOpts(@){
+  my %opts;
+  my $result = GetOptionsFromArray(\@_,
+    "config=s"  => \$opts{configFile},
+    "ip=s"      => \$opts{useIP},
+    "all|a"     => \$opts{all},
+    "get|g"     => \$opts{get},
+    "put|p"     => \$opts{put},
+    "decrypt=s" => \$opts{decrypt},
+    "h|help"    => \$opts{help},
+  );
+  die $usage if defined $opts{help} or not $result;
+  
+  die $usage if defined $opts{all} and not defined $opts{get};
+  die $usage if defined $opts{useIP} and not defined $opts{put};
 
-open FH, "< $configFile" or die "Could not open $configFile for reading";
-while(my $line = <FH>){
-  chomp $line;
-  next if $line =~ /^[ \t\n]*$/;
-  next if $line =~ /^ *#/;
-  if($line !~ /^([a-zA-Z_]+)[ \t\n]*=[ \t\n]*(.*)$/){
-    die "Malformed config file line: $line";
-  }
-  my $key = uc $1;
-  my $val = $2;
-  if($key eq 'TWITTER_OAUTH_ACCESS_TOKEN'){
-    $accessToken = $val;
-  }elsif($key eq 'TWITTER_OAUTH_ACCESS_TOKEN_SECRET'){
-    $accessTokenSecret = $val;
-  }elsif($key eq 'TWITTER_OAUTH_CONSUMER_KEY'){
-    $consumerKey = $val;
-  }elsif($key eq 'TWITTER_OAUTH_CONSUMER_SECRET'){
-    $consumerSecret = $val;
-  }else{
-    die "Unknown config file item: $1";
-  }
-}
-close FH;
-
-
-my @auth = authorize;
-if(not $auth[0]){
-  die "Could not authorize";
+  my $cmdCount = 0;
+  $cmdCount++ if defined $opts{get};
+  $cmdCount++ if defined $opts{put};
+  $cmdCount++ if defined $opts{decrypt};
+  die $usage if $cmdCount != 1;
+  
+  $opts{configFile} = "$ENV{HOME}/.twip" if not defined $opts{configFile};
+  return %opts;
 }
 
-open FH, "> $configFile" or die "Could not open $configFile for writing";
-print FH
-"TWITTER_OAUTH_ACCESS_TOKEN=$accessToken
-TWITTER_OAUTH_ACCESS_TOKEN_SECRET=$accessTokenSecret
-TWITTER_OAUTH_CONSUMER_KEY=$consumerKey
-TWITTER_OAUTH_CONSUMER_SECRET=$consumerSecret
-";
-close FH;
-
-if(defined $get and not defined $put and not defined $decrypt){
-  if(defined $useIP){
-    die $usage;
-  }
-
-  my @statuses = @{$nt->friends_timeline};
-  if(@statuses <= 0){
-    print "No statuses found!\n";
-  }elsif(not defined $all){
-    print decryptIP $statuses[0]->{text};
-  }else{
-    for my $status(@statuses){
-      my $ip = decryptIP $status->{text};
-      chomp $ip;
-      my $date = $status->{created_at};
-      print "$ip - $date\n";
+sub parseConfig($){
+  my $file = shift;
+  open FH, "< $file" or die "Could not open $file for reading";
+  my %config;
+  my %allowedConfigItems = (
+    accessToken       => 1,
+    accessTokenSecret => 1,
+    consumerKey       => 1,
+    consumerSecret    => 1,
+  );
+  for my $line(<FH>){
+    chomp $line;
+    $line =~ s/#.*//;
+    next if $line =~ /^\s*$/;
+    if($line =~ /^\s*([a-zA-Z0-9_-]+)\s*=\s*(.*)$/){
+      if(not defined $allowedConfigItems{$1}){
+        die "Unknown config item: $1\n";
+      }
+      $config{$1} = $2;
+    }else{
+      die "Malformed config file line: $line";
     }
   }
-}elsif(defined $put and not defined $get and not defined $decrypt){
-  if(defined $all){
-    die $usage;
-  }
-  $useIP = getIP if not defined $useIP;
-  
-  my $msg = encryptIP $useIP;
-  $nt->update({ status => $msg });
-}elsif(defined $decrypt and not defined $get and not defined $put){
-  print decryptIP $decrypt;
-}else{
-  die $usage;
+  close FH;
+  return %config;
 }
 
+sub writeConfig($$){
+  my $file = shift;
+  my %config = %{shift()};
+  my $out = '';
+  for my $key(sort keys %config){
+    $out .= "$key=$config{$key}\n";
+  }
+  open FH, "> $file" or die "Could not open $file for writing";
+  print FH $out;
+  close FH;
+}
+
+sub getIP(){
+  my $ip = `extip`;
+  chomp $ip;
+  return $ip;
+}
+sub encryptIP($$){
+  my $ip = shift;
+  my $accessTokenSecret = shift;
+  my $cmd = ''
+    . "echo '$ip' | "
+    . "gpg --no-use-agent -q -a --symmetric "
+    . "  --passphrase \"gpgkey_$accessTokenSecret\"";
+  my $block = `$cmd`;
+  $block =~ s/^-----BEGIN PGP MESSAGE-----\n.*\n\n//;
+  $block =~ s/\n-----END PGP MESSAGE-----\n*$//;
+  $block =~ s/!/!!!/g;
+  $block =~ s/\+/!p!/g;
+  $block =~ s/ /!s!/g;
+  $block =~ s/\t/!t!/g;
+  $block =~ s/\n/!n!/g;
+  return $block;
+}
+sub decryptIP($$){
+  my $enc = shift;
+  $enc =~ s/[+ \t\n]//g;
+  my $accessTokenSecret = shift;
+  
+  $enc =~ s/!n!/\n/g;
+  $enc =~ s/!t!/\t/g;
+  $enc =~ s/!s!/ /g;
+  $enc =~ s/!p!/+/g;
+  $enc =~ s/!!!/!/g;
+  
+  my $block = "-----BEGIN PGP MESSAGE-----\n";
+  $block .= "Version: GnuPG v1.4.9 (GNU/Linux)\n";
+  $block .= "\n";
+  $block .= $enc;
+  $block .= "\n-----END PGP MESSAGE-----";
+  my $cmd = ''
+    . "echo '$block' | "
+    . "gpg --no-use-agent --no-mdc-warning -q -d "
+    . "  --passphrase \"gpgkey_$accessTokenSecret\"";
+
+  return `$cmd`;
+}
+
+sub authorize($$$$){
+  my $consumerKey = shift;
+  my $consumerSecret = shift;
+  my $accessToken = shift;
+  my $accessTokenSecret = shift;
+
+  use Net::Twitter::Lite;
+  my $nt = Net::Twitter::Lite->new(
+      traits          => ['API::REST', 'API::Search', 'OAuth'],
+      consumer_key    => $consumerKey,
+      consumer_secret => $consumerSecret,
+  );
+
+  if($accessToken && $accessTokenSecret){
+      $nt->access_token($accessToken);
+      $nt->access_token_secret($accessTokenSecret);
+  }
+
+  unless($nt->authorized){
+    # The client is not yet authorized: Do it now
+    print "Authorize this app at " .
+      $nt->get_authorization_url .
+      " and enter the PIN#\n";
+
+    my $pin = <STDIN>;
+    chomp $pin;
+
+    ($accessToken, $accessTokenSecret) =
+      $nt->request_access_token(verifier => $pin);
+  }
+
+  if(not $nt->authorized){
+    die "Could not authorize\n";
+  }
+
+  return [$nt, $accessToken, $accessTokenSecret];
+}
+
+&main(@ARGV);
