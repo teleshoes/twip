@@ -106,19 +106,23 @@ sub authorize(){
   return $nt->authorized;
 }
 
-my $usage =
-"Usage: $0 [--config CONFIG] [--ip IP] [-a|--all] [-g|--get|-p|--put|--decrypt]
-Options:
- --config  Use this config file; defaults to ~/.twip
- --ip      Uses this IP instead of fetching from whatismyip.org
-           For use in --put
- -a --all  Fetches as many tweets as possible and decrypts them all
-           For use in --get
- -g --get  Fetch the most recent tweet and decrypt it to an IP
- -p --put  Obtain the external IP, encrypt it mildly, and tweet it
- --decrypt Instead of fetching, use this encrypted block,
-           perhaps copied from twitter, and decrypt it directly
- -h/--help Show this message
+my $usage = "Usage:
+  $0 [OPTS] [-a|--all] -g|--get
+    Fetch the most recent tweet and decrypt it to an IP 
+    -a|--all
+      Fetches as many tweets as possible and decrypts them all
+  $0 [OPTS] [--config CONFIG] [--ip IP] -p|--put
+    Obtain the external IP, encrypt it, and tweet it
+    --ip IP
+      Use IP instead of fetching from the internet
+  $0 --decrypt BLOCK
+    Instead of fetching, use this encrypted block,
+    perhaps copied from twitter, and decrypt it directly
+  $0 -h|--help
+    Show this message
+  OPTS:
+    --config CONFIG 
+      Use CONFIG instead of ~/.twip
 ";
 
 my ($configFile, $useIP, $all, $get, $put, $decrypt, $help);
