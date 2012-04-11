@@ -116,6 +116,16 @@ if(defined $ssh_user){
   print "$ip\n";
 }
 
+sub fetch(){
+  my $twitterLib = eval { require Net::Twitter::Lite };
+  if($twitterLib){
+    print "getting IP with OAUTH\n" if $verbose;
+    return `twip --get`;
+  }else{
+    print "fetching IP with wget\n" if $verbose;
+    return `twip --fetch`;
+  }
+}
 
 
 sub testIP($){
@@ -217,7 +227,7 @@ sub get_ip($){
     $ip = $ip_cache;
   }else{
     print "Fetching new ip\n" if $verbose;
-    $ip_cache = `twip -g`;
+    $ip_cache = fetch();
     chomp $ip_cache;
     print "Fetched $ip_cache\n" if $verbose;
     $date_cache = `date`;
