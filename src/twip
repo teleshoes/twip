@@ -238,7 +238,7 @@ sub authorize($$$$){
   my $accessToken = shift;
   my $accessTokenSecret = shift;
 
-  use Net::Twitter::Lite;
+  require Net::Twitter::Lite;
   my $nt = Net::Twitter::Lite->new(
       traits          => ['API::REST', 'API::Search', 'OAuth'],
       consumer_key    => $consumerKey,
