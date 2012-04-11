@@ -53,10 +53,11 @@ Options:
            Defaults to ~/.twipcache
  --entries Maximum number of entries allowed in cache
            Defaults to 20
+ --test    Test the IP using ssh to make sure its correct
+           Otherwise, assume the IP in the cache is identified as your server
+           {allows client to run their own test}
  --timeout The length of time to wait in seconds before failing IP test
            Defaults to 2 seconds
- --notest  Assume the IP in the cache is identified as your server
-           {allows client to run their own test}
  --fetch   Ignore cache hits; always fetch a new ip and add it to the cache
  --nocache Do not cache the results. Implies --fetch
  -s/--ssh  take the user passed in and ssh to the ip returned
@@ -76,13 +77,13 @@ e.g.:
 124.141.12.12 Sun Aug 22 14:45:36 EDT 2010
 ";
 
-my ($file, $entries, $timeout, $notest, $fetch,
+my ($file, $entries, $timeout, $test, $fetch,
     $nocache, $ssh_user, $verbose, $help);
 my $result = GetOptions(
   "file=s"    => \$file,
   "entries=i" => \$entries,
   "timeout=i" => \$timeout,
-  "notest"    => \$notest,
+  "test"      => \$test,
   "fetch"     => \$fetch,
   "nocache"   => \$nocache,
   "s|ssh:s"   => \$ssh_user,
@@ -212,7 +213,7 @@ sub get_ip($){
     print "Cache is empty/unused\n" if $verbose;
   }
 
-  if(not $notest and
+  if($test and
      not $fetch and
      defined $ip_cache and
      not testIP $ip_cache
