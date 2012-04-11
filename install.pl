@@ -4,8 +4,12 @@ use warnings;
 
 my $prefix = '/usr/local';
 
-print "handling prereq, Net::Twitter::Lite perl module\n";
-system "sudo apt-get install libnet-twitter-lite-perl";
+my @deps = qw(
+  libnet-twitter-lite-perl
+  libnet-oauth-perl
+);
+print "Installing deps: @deps\n";
+system "sudo apt-get install @deps";
 
 my $cmd = "sudo cp src/* $prefix/bin"; 
 system "echo $cmd";
