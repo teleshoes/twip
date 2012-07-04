@@ -42,6 +42,12 @@ sub fetchExternalIP(){
 
 my $ip = fetchExternalIP();
 print "Fetched IP: $ip\n";
+my $oldIP = `twip -g`;
+chomp $oldIP;
+if($oldIP eq $ip){
+  print "IP is the same on twitter\n";
+  exit 0;
+}
 
 my $newIP = '';
 $start = time;
