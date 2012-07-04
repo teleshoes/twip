@@ -1,8 +1,12 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
-my $ip =  `wget -q -O - http://checkip.dyndns.org | cut -f 2 -d \\: | cut -f 1 -d \\<`;
-$ip =~ s/^ *(.*) *$/$1/s;
 
-print $ip;
+my $server = "http://checkip.dyndns.org";
 
+my $ipGet = `wget -q -O - $server`;
+if($ipGet =~ /\d+\.\d+\.\d+\.\d+/){
+  print "$&\n";
+}else{
+  die "Couldn't get IP from $server\n";
+}
