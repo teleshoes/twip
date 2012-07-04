@@ -21,19 +21,26 @@ sub fail($){
   die $err;
 }
 
-my $ip = '';
-$start = time;
-while($ip !~ /^([0-9]+\.)*[0-9]+$/){
-  if(time - $start >= $TIMEOUT){
-    fail 'Failure: could not obtain IP';
+sub fetchExternalIP(){
+  $start = time;
+
+  my $ip;
+  while(not defined $ip){
+    if(time - $start >= $TIMEOUT){
+      fail 'Failure: could not obtain IP';
+    }
+    print "Trying to fetch IP...\n";
+    $ip = `extip`;
+    chomp $ip;
+    if($ip !~ /^\d+\.\d+\.\d+\.\d+$/){
+      undef $ip;
+      sleep 1;
+    }
   }
-  print "Trying to fetch IP...\n";
-  $ip = `extip`;
-  $ip =~ s/[ \t\n]//g;
-  print "  response: $ip\n";
-  sleep 2;
+  return $ip;
 }
 
+my $ip = fetchExternalIP();
 print "Fetched IP: $ip\n";
 
 my $newIP = '';
