@@ -17,6 +17,7 @@ sub run(@){
 
 run "sudo apt-get install @deps";
 run "sudo cp src/* $prefix/bin";
+run "sudo cp logrotate.conf /etc/logrotate.d/twip";
 
 run "sudo rm -f $cronDir/twip";
 print "add twips cronjob to $cronDir? [y/N] ";
