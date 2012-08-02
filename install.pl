@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 my $prefix = '/usr/local';
-my $cronDir = "/etc/cron.daily";
+my $cronDir = "/etc/cron.hourly";
 
 my @deps = qw(
   libnet-twitter-lite-perl
