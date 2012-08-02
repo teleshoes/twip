@@ -13,7 +13,7 @@ my $start;
 sub twiplog($){
   my $msg = shift;
   my $time = localtime time;
-  system "echo '$time: $msg' >> ~/.twiplog";
+  system "echo '$time: $msg' >> $LOG_FILE";
 }
 sub fail($){
   my $err = shift;
