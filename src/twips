@@ -50,6 +50,7 @@ chomp $oldIP;
 print "Previous IP: $oldIP\n";
 if($oldIP eq $ip){
   print "IP is the same on twitter\n";
+  twiplog "still $oldIP";
   exit 0;
 }
 
