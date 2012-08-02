@@ -8,10 +8,11 @@ my @deps = qw(
   libnet-twitter-lite-perl
   libnet-oauth-perl
 );
-print "Installing deps: @deps\n";
-system "sudo apt-get install @deps";
 
-my $cmd = "sudo cp src/* $prefix/bin"; 
-system "echo $cmd";
-system $cmd;
+sub run(@){
+  print "@_\n";
+  system @_;
+}
 
+run "sudo apt-get install @deps";
+run "sudo cp src/* $prefix/bin";
