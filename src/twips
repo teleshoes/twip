@@ -6,7 +6,7 @@ use strict;
 use warnings;
 
 my $isRoot = `whoami` eq "root\n";
-my $LOG_FILE = $isRoot ? "/var/log/twiplog" : "$ENV{HOME}/.twiplog";
+my $LOG_FILE = $isRoot ? "/var/log/twip.log" : "$ENV{HOME}/.twiplog";
 my $TIMEOUT = 30;
 
 my $start;
