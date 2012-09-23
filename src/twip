@@ -63,7 +63,7 @@ sub main(@){
   writeConfig $opts{configFile}, \%config;
 
   if(defined $opts{get}){
-    my @statuses = @{$nt->friends_timeline};
+    my @statuses = @{$nt->user_timeline};
     if(@statuses <= 0){
       print "No statuses found!\n";
     }elsif(not defined $opts{all}){
