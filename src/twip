@@ -210,7 +210,7 @@ sub authorize($$$$){
 
   require Net::Twitter;
   my $nt = Net::Twitter->new(
-      traits           => ['API::REST', 'API::Search', 'OAuth'],
+      traits           => ['API::RESTv1_1', 'OAuth'],
       consumer_key     => $consumerKey,
       consumer_secret  => $consumerSecret,
       legacy_lists_api => 0,
