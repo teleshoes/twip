@@ -7,7 +7,6 @@ my $cronDir = "/etc/cron.hourly";
 
 my @deps = qw(
   libnet-twitter-perl
-  libnet-oauth-perl
 );
 
 sub run(@){
