@@ -17,7 +17,7 @@ my $CACHE_LINE_REGEX = qr/^ (\d+\. \d+\. \d+\. \d+) \t (.*) \n? $/x;
 my $usage =
 "Usage: $0 [options..]
   Read and decrypt IP from twitter using OAUTH and twitter api
-    {or parsing http with wget if Net::Twitter::Lite is missing}
+    {or parsing http with wget if Net::Twitter is missing}
   Caches the ip
 Options:
  --file    Use this cache file
@@ -89,7 +89,7 @@ if(defined $ssh_user){
 }
 
 sub fetch(){
-  my $twitterLib = eval { require Net::Twitter::Lite };
+  my $twitterLib = eval { require Net::Twitter };
   if($twitterLib){
     print "getting IP with OAUTH\n" if $verbose;
     return `twip --get`;

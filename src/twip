@@ -20,7 +20,7 @@ my $usage = "Usage:
     perhaps copied from twitter, and decrypt it directly
   $0 [OPTS] --fetch
     Get the ip using wget instead of OAUTH, and decrypt it like --decrypt
-    Bypasses Net::Twitter::Lite completely
+    Bypasses Net::Twitter completely
   $0 -h|--help
     Show this message
   OPTS:
@@ -208,8 +208,8 @@ sub authorize($$$$){
   my $accessToken = shift;
   my $accessTokenSecret = shift;
 
-  require Net::Twitter::Lite;
-  my $nt = Net::Twitter::Lite->new(
+  require Net::Twitter;
+  my $nt = Net::Twitter->new(
       traits           => ['API::REST', 'API::Search', 'OAuth'],
       consumer_key     => $consumerKey,
       consumer_secret  => $consumerSecret,

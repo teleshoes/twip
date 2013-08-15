@@ -6,7 +6,7 @@ my $prefix = '/usr/local';
 my $cronDir = "/etc/cron.hourly";
 
 my @deps = qw(
-  libnet-twitter-lite-perl
+  libnet-twitter-perl
   libnet-oauth-perl
 );
 

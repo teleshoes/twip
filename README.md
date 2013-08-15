@@ -8,19 +8,19 @@ and using it in any way may violate Twitter's terms of service.
 
 Features:
 -gpg encryption
--uses Twitter's OAUTH api through Net::Twitter::Lite
--remote devices dont need Net::Twitter::Lite
+-uses Twitter's OAUTH api through Net::Twitter
+-remote devices dont need Net::Twitter
 
 Requirements:
--Net::Twitter::Lite for twips
+-Net::Twitter for twips
 -wget and perl5.10+ (and standard modules) for twipc
 
 Files:
 twip - TWitter IP
-  core script; interacts with Net::Twitter::Lite and gpg
+  core script; interacts with Net::Twitter and gpg
 twipc - TWitter IP Client
   fetches ip from twitter, and maintains a cache.
-  if Net::Twitter::Lite is not present, falls back on wget
+  if Net::Twitter is not present, falls back on wget
 twips - TWitter IP Server
   gets external ip and tweets it
 extip - EXTernal IP
