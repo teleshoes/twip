@@ -245,7 +245,7 @@ sub fetchTweet($){
   my $screenName = shift;
   my $url = "http://twitter.com/$screenName";
   my $tweets = `wget -q -O - $url`;
-  if($tweets =~ /<p class="js-tweet-text">([^<]*)<\/p>/s){
+  if($tweets =~ /<p class="[^"]*tweet-text[^"]*">([^<]*)<\/p>/s){
     return $1;
   }
   die "Twitter must have changed their html; fix me in twip.fetchTweet\n";
