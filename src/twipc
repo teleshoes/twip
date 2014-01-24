@@ -122,7 +122,7 @@ sub testIP($){
 
 sub read_cache($){
   my $file = shift;
-  
+
   open FH, "< $file" or die
     "Could not open $file for reading\n$usage";
   my @lines = <FH>;
@@ -156,7 +156,7 @@ sub write_cache($@){
 
 sub get_ip($){
   my $file = shift;
-  
+
   if(not -e $file){
     print "No cache file found, creating new\n" if $verbose;
     system "echo > $file";

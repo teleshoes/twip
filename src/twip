@@ -7,8 +7,8 @@ use warnings;
 use Getopt::Long qw(GetOptionsFromArray);
 
 my $usage = "Usage:
-  $0 [OPTS] -g|--get [-a|--all] 
-    Fetch the most recent tweet and decrypt it to an IP 
+  $0 [OPTS] -g|--get [-a|--all]
+    Fetch the most recent tweet and decrypt it to an IP
     -a|--all
       Fetches as many tweets as possible and decrypts them all
   $0 [OPTS] -p|--put [--ip IP]
@@ -24,7 +24,7 @@ my $usage = "Usage:
   $0 -h|--help
     Show this message
   OPTS:
-    --config CONFIG 
+    --config CONFIG
       Use CONFIG instead of ~/.twip
 ";
 
@@ -101,7 +101,7 @@ sub parseOpts(@){
     "h|help"    => \$opts{help},
   );
   die $usage if defined $opts{help} or not $result;
-  
+
   die $usage if defined $opts{all} and not defined $opts{get};
   die $usage if defined $opts{useIP} and not defined $opts{put};
 
@@ -111,7 +111,7 @@ sub parseOpts(@){
   $cmdCount++ if defined $opts{decrypt};
   $cmdCount++ if defined $opts{fetch};
   die $usage if $cmdCount != 1;
-  
+
   $opts{configFile} = "$ENV{HOME}/.twip" if not defined $opts{configFile};
   return %opts;
 }
@@ -182,13 +182,13 @@ sub decryptIP($$){
   my $enc = shift;
   $enc =~ s/[+ \t\n]//g;
   my $accessTokenSecret = shift;
-  
+
   $enc =~ s/!n!/\n/g;
   $enc =~ s/!t!/\t/g;
   $enc =~ s/!s!/ /g;
   $enc =~ s/!p!/+/g;
   $enc =~ s/!!!/!/g;
-  
+
   my $block = "-----BEGIN PGP MESSAGE-----\n";
   $block .= "Version: GnuPG v1.4.9 (GNU/Linux)\n";
   $block .= "\n";
