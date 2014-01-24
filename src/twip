@@ -214,6 +214,7 @@ sub authorize($$$$){
       consumer_key     => $consumerKey,
       consumer_secret  => $consumerSecret,
       legacy_lists_api => 0,
+      ssl              => 1,
   );
 
   if($accessToken && $accessTokenSecret){
